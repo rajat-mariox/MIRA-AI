@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "872501581253",
+    "project_id": "mirai-5d29a",
+    "storage_bucket": "mirai-5d29a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:872501581253:android:96d0ae0287aeda1a19a7ac",
+        "android_client_info": {
+          "package_name": "com.av.mirai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBY9bdZT20fYsWB1FWmDoX5D1VzwWgdA80"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

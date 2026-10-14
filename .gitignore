@@ -1,0 +1,35 @@
+# Dependencies & builds (each project also has its own .gitignore)
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+*.tsbuildinfo
+
+# Secrets - never commit
+.env
+.env.local
+.env.*.local
+!mirai-react/.env
+!mirai-react/.env.production
+!mirai-admin-panel/.env
+!mirai-admin-panel/.env.development
+mirai-backend/secrets/
+*.pem
+*.p12
+*.jks
+*.keystore
+!mirai-app/android/app/debug.keystore
+GoogleService-Info.plist
+
+# Uploads & logs
+mirai-backend/uploads/
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

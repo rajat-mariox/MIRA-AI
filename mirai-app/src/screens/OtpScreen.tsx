@@ -1,0 +1,284 @@
+import React, { useEffect, useState } from 'react';
+import {
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import GradientBackground from '../components/GradientBackground';
+import CosmicArt from '../components/CosmicArt';
+import useAuthLayout from '../hooks/useAuthLayout';
+import KeyboardAwareScroll from '../components/KeyboardAwareScroll';
+import Button from '../components/Button';
+import SmsIcon from '../assets/images/icon-sms.svg';
+import type { RootStackParamList } from '../navigation/types';
+import { routesForUser } from '../navigation/navigationRef';
+import { useSession } from '../context/OnboardingContext';
+import { sendOtp, verifyOtp } from '../api/auth';
+import { errorMessage } from '../api/client';
+import { colors, fonts } from '../theme';
+
+const OTP_LENGTH = 4;
+const RESEND_AFTER_SECONDS = 60;
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
+
+function formatSeconds(total: number) {
+  const m = Math.floor(total / 60);
+  const sec = total % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+export default function OtpScreen({ navigation }: Props) {
+  const layout = useAuthLayout(41);
+
+  const [code, setCode] = useState('');
+  const [secondsLeft, setSecondsLeft] = useState(RESEND_AFTER_SECONDS);
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const { data, signIn } = useSession();
+
+  useEffect(() => {
+    if (secondsLeft === 0) return;
+    const id = setTimeout(() => setSecondsLeft(v => v - 1), 1000);
+    return () => clearTimeout(id);
+  }, [secondsLeft]);
+
+  const onResend = async () => {
+    if (secondsLeft > 0 || busy) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      await sendOtp(data.email);
+      setCode('');
+      setSecondsLeft(RESEND_AFTER_SECONDS);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onSubmit = async () => {
+    if (busy) return;
+    if (code.length < OTP_LENGTH) {
+      setError(`Please enter the ${OTP_LENGTH} digit code`);
+      return;
+    }
+    setError(undefined);
+    setBusy(true);
+    try {
+      // Terms were accepted on the Welcome screen (the Get OTP button requires it)
+      const res = await verifyOtp(data.email, code, true);
+      await signIn(
+        { accessToken: res.accessToken, refreshToken: res.refreshToken },
+        res.user,
+      );
+      // New / incomplete users continue onboarding where they left off; others go Home
+      const routes = routesForUser(res.user);
+      navigation.reset({ index: routes.length - 1, routes });
+    } catch (e) {
+      setError(errorMessage(e));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" />
+      <GradientBackground />
+      <KeyboardAwareScroll
+        contentContainerStyle={[styles.content, layout.contentStyle]}
+      >
+        {/* Inside the scroll content; shrinks while the keyboard is open so nothing is cut off */}
+        <CosmicArt scale={layout.artScale} />
+        <View style={styles.form} onLayout={layout.onFormLayout}>
+          <View>
+            <Text style={styles.title}>OTP Verification</Text>
+            <Text style={styles.subtitle}>
+              An 4 digit code has been sent to your Email id
+            </Text>
+          </View>
+
+          <View style={styles.otpBlock}>
+            <View style={styles.boxes}>
+              {Array.from({ length: OTP_LENGTH }, (_, i) => (
+                <View key={i} style={styles.box}>
+                  <Text style={styles.digit}>{code[i] ?? ''}</Text>
+                </View>
+              ))}
+              {/* Invisible input over the boxes: handles typing, paste and SMS autofill */}
+              <TextInput
+                value={code}
+                onChangeText={t => {
+                  setCode(t.replace(/\D/g, '').slice(0, OTP_LENGTH));
+                  if (error) setError(undefined);
+                }}
+                keyboardType="number-pad"
+                textContentType="oneTimeCode"
+                autoComplete="sms-otp"
+                maxLength={OTP_LENGTH}
+                autoFocus
+                caretHidden
+                style={styles.hiddenInput}
+                accessibilityLabel="One time password"
+              />
+            </View>
+            {!!error && <Text style={styles.error}>{error}</Text>}
+            <Text style={styles.timer}>{formatSeconds(secondsLeft)}</Text>
+            <View style={styles.resendRow}>
+              <Text style={styles.resendHint}>
+                If you din't receive a code!
+              </Text>
+              <Pressable
+                onPress={onResend}
+                hitSlop={8}
+                accessibilityRole="button"
+              >
+                <Text style={styles.resend}>Resend</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.actions}>
+            <Button
+              title="Submit"
+              onPress={onSubmit}
+              disabled={busy}
+              style={styles.fullWidth}
+            />
+            <Pressable
+              onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              style={styles.changeEmail}
+            >
+              <SmsIcon width={22} height={22} />
+              <Text style={styles.changeEmailText}>Change Email ID</Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAwareScroll>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.black,
+  },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
+  },
+  form: {
+    gap: 42,
+  },
+  title: {
+    marginBottom: 4,
+    fontFamily: fonts.medium,
+    fontSize: 24,
+    lineHeight: 36,
+    color: colors.white,
+    includeFontPadding: false,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.white,
+    includeFontPadding: false,
+  },
+  otpBlock: {
+    gap: 16,
+    alignItems: 'center',
+  },
+  boxes: {
+    flexDirection: 'row',
+    gap: 16,
+    width: '100%',
+  },
+  box: {
+    flex: 1,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    borderWidth: 0.636,
+    borderColor: colors.inputBorder,
+    backgroundColor: colors.inputBackground,
+  },
+  digit: {
+    fontFamily: fonts.medium,
+    fontSize: 20,
+    lineHeight: 30,
+    color: colors.white,
+    includeFontPadding: false,
+  },
+  hiddenInput: {
+    ...StyleSheet.absoluteFill,
+    color: 'transparent',
+    opacity: 0.01,
+  },
+  error: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 16.5,
+    color: '#FFB4B4',
+  },
+  timer: {
+    fontFamily: fonts.medium,
+    fontSize: 20,
+    lineHeight: 30,
+    color: colors.white,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+  resendRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  resendHint: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.white,
+    includeFontPadding: false,
+  },
+  resend: {
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.white,
+    textDecorationLine: 'underline',
+    includeFontPadding: false,
+  },
+  actions: {
+    gap: 20,
+    alignItems: 'center',
+  },
+  fullWidth: {
+    alignSelf: 'stretch',
+  },
+  changeEmail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+  },
+  changeEmailText: {
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    lineHeight: 18,
+    color: colors.white,
+    textDecorationLine: 'underline',
+    includeFontPadding: false,
+  },
+});
