@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Window background while the app starts: the same nebula as the JS splash screen, so there is
+     no black flash before React Native draws (the JS splash then fades the emblem in on top). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_background" />
+    <item>
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/splash_background" />
+    </item>
+</layer-list>

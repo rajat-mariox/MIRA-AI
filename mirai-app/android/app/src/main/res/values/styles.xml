@@ -7,7 +7,8 @@
         <!-- Let the screen gradients run behind the navigation bar, as in the design -->
         <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
-        <item name="android:windowBackground">@android:color/black</item>
+        <!-- Splash nebula while the app starts (matches the JS splash screen) -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
 
 </resources>

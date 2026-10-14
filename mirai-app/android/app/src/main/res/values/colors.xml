@@ -2,4 +2,6 @@
 <resources>
     <!-- Notification accent (small icon tint) -->
     <color name="notification_color">#A7D8F2</color>
+    <!-- Centre colour of the splash nebula (launch background and Android 12+ system splash) -->
+    <color name="splash_background">#431D5F</color>
 </resources>
