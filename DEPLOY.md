@@ -4,8 +4,8 @@ One EC2 instance runs everything:
 
 | Part | How it runs | Public URL (replace with yours) |
 |---|---|---|
-| `mirai-backend` | Node.js under PM2 on port 5000, behind Nginx | `https://mira-ai.marioxsoftware.net/api/v1` |
-| `mirai-admin-panel` | static build served by Nginx | `https://admin.mira-ai.marioxsoftware.net` |
+| `mirai-backend` | Node.js under PM2 on port 5000, behind Nginx | `https://api.miraiastro.com/api/v1` |
+| `mirai-admin-panel` | static build served by Nginx | `https://admin.miraiastro.com` |
 | `mirai-react` (website) | static build served by Nginx | `https://miraiastro.com` |
 | MongoDB | MongoDB Atlas (recommended) or MongoDB on the same server | — |
 
@@ -24,7 +24,7 @@ If you use different domains, change them in: `deploy/nginx/mirai.conf`, `mirai-
 2. **Security group** (instance → Security → inbound rules): allow **22** (SSH), **80** (HTTP), **443** (HTTPS).
    Do **not** open 5000 or 27017.
 3. **DNS** (where your domains are managed): add an **A record** for each domain → the Elastic IP:
-   `mira-ai.marioxsoftware.net`, `admin.mira-ai.marioxsoftware.net`, `miraiastro.com`, `www.miraiastro.com`.
+   `api.miraiastro.com`, `admin.miraiastro.com`, `miraiastro.com`, `www.miraiastro.com`.
 
 ## 2. Install the software (once)
 
@@ -74,8 +74,8 @@ Fill `.env` (copy the keys from your local `mirai-backend/.env`). Production val
 ```env
 NODE_ENV=production
 PORT=5000
-PUBLIC_BASE_URL=https://mira-ai.marioxsoftware.net
-CORS_ORIGINS=https://admin.mira-ai.marioxsoftware.net,https://miraiastro.com,https://www.miraiastro.com
+PUBLIC_BASE_URL=https://api.miraiastro.com
+CORS_ORIGINS=https://admin.miraiastro.com,https://miraiastro.com,https://www.miraiastro.com
 TRUST_PROXY=1
 MONGODB_URI=...                      # from step 3
 JWT_ACCESS_SECRET=...                # NEW long random strings for production:
@@ -108,7 +108,7 @@ Logs: `pm2 logs mirai-api` · restart: `pm2 reload mirai-api`.
 ## 5. Admin panel and website
 
 `mirai-admin-panel/.env` and `mirai-react/.env.production` already point to
-`https://mira-ai.marioxsoftware.net/api/v1` (change them if your API domain differs).
+`https://api.miraiastro.com/api/v1` (change them if your API domain differs).
 ```bash
 cd ~/MIRA-AI/mirai-admin-panel && npm ci && npm run build
 sudo mkdir -p /var/www/mirai-admin && sudo rsync -a --delete dist/ /var/www/mirai-admin/
@@ -127,9 +127,9 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d mira-ai.marioxsoftware.net -d admin.mira-ai.marioxsoftware.net -d miraiastro.com -d www.miraiastro.com
+sudo certbot --nginx -d api.miraiastro.com -d admin.miraiastro.com -d miraiastro.com -d www.miraiastro.com
 ```
-Certbot adds HTTPS and auto-renews. Check: `https://mira-ai.marioxsoftware.net/api/v1/health`.
+Certbot adds HTTPS and auto-renews. Check: `https://api.miraiastro.com/api/v1/health`.
 
 ## 7. Updating later
 

@@ -11,7 +11,7 @@ import { NativeModules } from 'react-native';
  *   Release builds (APK / store) always use PROD_API_BASE_URL (must be https: release builds
  *   block cleartext HTTP).
  */
-const PROD_API_BASE_URL = 'https://mira-ai.marioxsoftware.net/api/v1';
+const PROD_API_BASE_URL = 'https://api.miraiastro.com/api/v1';
 const FALLBACK_DEV_HOST = '192.168.29.200';
 
 function devServerHost(): string {
