@@ -8,10 +8,10 @@ import { NativeModules } from 'react-native';
  *   over Wi-Fi, or `localhost` over USB (then also run `adb reverse tcp:5000 tcp:5000`).
  *   Nothing to edit when the computer's IP changes. FALLBACK_DEV_HOST is used only if the
  *   bundle URL can't be read.
- *   For production, point this at the deployed API, e.g.
- *     const PROD_API_BASE_URL = 'https://api.miraiastro.com/api/v1';
- *   Release builds block cleartext HTTP, so production must be https.
+ *   Release builds (APK / store) always use PROD_API_BASE_URL (must be https: release builds
+ *   block cleartext HTTP).
  */
+const PROD_API_BASE_URL = 'https://mira-ai.marioxsoftware.net/api/v1';
 const FALLBACK_DEV_HOST = '192.168.29.200';
 
 function devServerHost(): string {
@@ -23,7 +23,7 @@ function devServerHost(): string {
   return host || FALLBACK_DEV_HOST;
 }
 
-export const API_BASE_URL = `http://${devServerHost()}:5000/api/v1`;
+export const API_BASE_URL = __DEV__ ? `http://${devServerHost()}:5000/api/v1` : PROD_API_BASE_URL;
 
 /** Request timeouts (ms). Chat replies come from an LLM and can take longer. */
 export const REQUEST_TIMEOUT_MS = 30_000;
