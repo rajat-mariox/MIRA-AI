@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
@@ -36,7 +37,8 @@ export default function RootNavigator() {
       initialRouteName="Splash"
       screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' } }}
     >
-      <Stack.Screen name="Splash" component={SplashScreen} />
+      {/* Transparent so the native launch background (same nebula) shows until the splash image draws */}
+      <Stack.Screen name="Splash" component={SplashScreen} options={{ contentStyle: styles.transparent }} />
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="Otp" component={OtpScreen} />
       <Stack.Screen name="Name" component={NameScreen} />
@@ -64,3 +66,9 @@ export default function RootNavigator() {
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  transparent: {
+    backgroundColor: 'transparent',
+  },
+});

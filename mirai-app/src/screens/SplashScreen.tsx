@@ -5,7 +5,7 @@ import Rings from '../assets/images/splash-rings.svg';
 import type { RootStackParamList } from '../navigation/types';
 import { routesForUser } from '../navigation/navigationRef';
 import { useSession } from '../context/OnboardingContext';
-import { colors, DESIGN_WIDTH } from '../theme';
+import { DESIGN_WIDTH } from '../theme';
 
 // Nebula video frame with the design's hard-light blue→pink gradient baked in
 // (Android does not render Figma's hard-light blend the same way)
@@ -61,8 +61,8 @@ export default function SplashScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="light-content" />
-      <Image source={background} resizeMode="cover" style={StyleSheet.absoluteFill} />
-      <Image source={glow} resizeMode="cover" style={[styles.abs, styles.plusLighter, centred(ART.glow)]} />
+      <Image source={background} resizeMode="cover" fadeDuration={0} style={StyleSheet.absoluteFill} />
+      <Image source={glow} resizeMode="cover" fadeDuration={0} style={[styles.abs, styles.plusLighter, centred(ART.glow)]} />
       <Rings width={ART.rings * s} height={ART.rings * s} style={[styles.abs, centred(ART.rings)]} />
       <Animated.Image
         source={emblem}
@@ -74,9 +74,11 @@ export default function SplashScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // Transparent: the native launch background (the same nebula) shows until the image draws,
+  // so there is no black frame between the launch screen and this one
   root: {
     flex: 1,
-    backgroundColor: colors.black,
+    backgroundColor: 'transparent',
     overflow: 'hidden',
   },
   abs: {

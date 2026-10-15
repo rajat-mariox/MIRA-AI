@@ -2,4 +2,4 @@
 <!-- Android 12+ system splash icon: the MIRAI emblem inside the 288dp splash icon canvas -->
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:drawable="@drawable/splash_emblem"
-    android:inset="72dp" />
+    android:inset="8dp" />
