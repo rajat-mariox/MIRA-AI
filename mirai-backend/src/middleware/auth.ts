@@ -20,12 +20,12 @@ async function authenticate(req: Request, token: string): Promise<void> {
   // Throws TokenExpiredError / JsonWebTokenError -> mapped to 401 by errorHandler
   const payload = verifyAccessToken(token);
 
-  const session = await Session.findOne({ _id: payload.sid, userId: payload.sub })
-    .select('_id lastActiveAt')
-    .lean();
+  // Both lookups at once: one database round trip instead of two on every request
+  const [session, user] = await Promise.all([
+    Session.findOne({ _id: payload.sid, userId: payload.sub }).select('_id lastActiveAt').lean(),
+    User.findById(payload.sub),
+  ]);
   if (!session) throw ApiError.unauthorized('auth.sessionExpired');
-
-  const user = await User.findById(payload.sub);
   if (!user) throw ApiError.unauthorized('auth.userNotFound');
   if (user.isActive === false) throw ApiError.forbidden('auth.accountDeactivated');
 

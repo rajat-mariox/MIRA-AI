@@ -44,6 +44,8 @@ const DRIFT_DEG = 0.59 * (DRIFT_MS / 1000);
 // Hand-over to Welcome (like the prototype's smart animate): the emblem glides up into its
 // Welcome spot while the Welcome backdrop fades in; Welcome then opens with no transition.
 const OUTRO_MS = 650;
+// Shortest time the splash stays up (the emblem fades in over 600ms)
+const MIN_SPLASH_MS = 1200;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
@@ -85,9 +87,9 @@ export default function SplashScreen({ navigation }: Props) {
       easing: Easing.linear,
       useNativeDriver: true,
     }).start();
-    // Show the splash for at least 2s while the stored session is restored (GET /users/me)
+    // Show the splash briefly while the stored session is restored
     const minDelay = new Promise<void>(resolve =>
-      setTimeout(() => resolve(), 2000),
+      setTimeout(() => resolve(), MIN_SPLASH_MS),
     );
     Promise.all([restoreSession().catch(() => null), minDelay]).then(
       ([user]) => {

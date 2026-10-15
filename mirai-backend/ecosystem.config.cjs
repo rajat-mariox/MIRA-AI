@@ -12,6 +12,8 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       max_memory_restart: '600M',
+      // time for the graceful shutdown (close DB, stop the scheduler) before PM2 kills it
+      kill_timeout: 8000,
       env: {
         NODE_ENV: 'production',
       },

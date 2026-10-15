@@ -191,17 +191,31 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const restoreSession = useCallback(async () => {
     const tokens = await loadTokens();
     if (!tokens) return null;
+
+    // Fast start: with a saved profile, open the app right away and refresh it in the
+    // background (an expired session still ends via the client's session-expired handler)
+    const cached = await loadCachedUser<User>();
+    if (cached) {
+      setUser(cached);
+      userApi
+        .getMe()
+        .then(fresh => {
+          setUser(fresh);
+          registerPushToken();
+        })
+        .catch(() => {
+          // offline / server slow: keep the saved profile
+        });
+      return cached;
+    }
+
     try {
       const u = await userApi.getMe();
       setUser(u);
       registerPushToken();
       return u;
     } catch (e) {
-      if (e instanceof ApiError && e.isNetworkError) {
-        const cached = await loadCachedUser<User>();
-        if (cached) setUser(cached);
-        return cached;
-      }
+      if (e instanceof ApiError && e.isNetworkError) return null;
       await clearSession();
       return null;
     }
