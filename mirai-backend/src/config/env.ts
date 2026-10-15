@@ -34,7 +34,7 @@ const envSchema = z.object({
   JWT_ADMIN_SECRET: z.string().min(16),
   JWT_ADMIN_EXPIRES: z.string().default('1d'),
 
-  OTP_LENGTH: z.coerce.number().int().min(4).max(6).default(4),
+  OTP_LENGTH: z.coerce.number().int().min(4).max(6).default(6),
   OTP_EXPIRY_MINUTES: z.coerce.number().int().positive().default(10),
   OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
   DEV_FIXED_OTP: optionalString,

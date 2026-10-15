@@ -57,10 +57,12 @@ export default function OtpBoxes({
   }, [caret]);
 
   const activeIndex = Math.min(value.length, length - 1);
+  // Six boxes sit closer together and a little shorter so they still fit a narrow phone
+  const compact = length > 4;
 
   return (
     <Pressable
-      style={styles.row}
+      style={[styles.row, compact && styles.rowCompact]}
       onPress={() => inputRef.current?.focus()}
       accessible={false}
     >
@@ -72,13 +74,14 @@ export default function OtpBoxes({
             key={i}
             style={[
               styles.box,
+              compact && styles.boxCompact,
               !!digit && styles.boxFilled,
               isActive && styles.boxActive,
               error && styles.boxError,
             ]}
           >
             {digit ? (
-              <Text style={styles.digit}>{digit}</Text>
+              <Text style={[styles.digit, compact && styles.digitCompact]}>{digit}</Text>
             ) : isActive ? (
               <Animated.View style={[styles.caret, { opacity: caret }]} />
             ) : null}
@@ -111,6 +114,9 @@ const styles = StyleSheet.create({
     gap: 14,
     width: '100%',
   },
+  rowCompact: {
+    gap: 10,
+  },
   box: {
     flex: 1,
     height: 64,
@@ -120,6 +126,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.28)',
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  boxCompact: {
+    height: 56,
+    borderRadius: 14,
   },
   boxFilled: {
     borderColor: 'rgba(167, 216, 242, 0.55)',
@@ -141,6 +151,10 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     color: colors.white,
     includeFontPadding: false,
+  },
+  digitCompact: {
+    fontSize: 24,
+    lineHeight: 30,
   },
   caret: {
     width: 2,

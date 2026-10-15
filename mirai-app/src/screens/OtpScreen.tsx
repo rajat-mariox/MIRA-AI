@@ -21,7 +21,8 @@ import { sendOtp, verifyOtp } from '../api/auth';
 import { errorMessage } from '../api/client';
 import { colors, fonts } from '../theme';
 
-const OTP_LENGTH = 4;
+// Must match OTP_LENGTH in the backend .env
+const OTP_LENGTH = 6;
 const RESEND_AFTER_SECONDS = 60;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Otp'>;
@@ -99,7 +100,7 @@ export default function OtpScreen({ navigation }: Props) {
           <View>
             <Text style={styles.title}>OTP Verification</Text>
             <Text style={styles.subtitle}>
-              An 4 digit code has been sent to your Email id
+              A {OTP_LENGTH} digit code has been sent to your Email id
             </Text>
           </View>
 

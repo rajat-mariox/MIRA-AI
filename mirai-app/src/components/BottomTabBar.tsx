@@ -23,10 +23,10 @@ type Tab = {
 // Que & Report (the chat) sits in the middle
 const TABS: Tab[] = [
   { key: 'home', label: 'Home', Icon: TabHome, size: 23 },
-  { key: 'kundli', label: 'Kundli', Icon: TabKundli, size: 26 },
-  { key: 'que-report', label: 'Que & Report', Icon: TabQueReport, size: 26 },
-  { key: 'panchang', label: 'Panchang', Icon: TabPanchang, size: 26 },
   { key: 'horoscope', label: 'Horoscope', Icon: TabHoroscope, size: 23.5 },
+  { key: 'que-report', label: 'Que & Report', Icon: TabQueReport, size: 26 },
+  { key: 'kundli', label: 'Kundli', Icon: TabKundli, size: 26 },
+  { key: 'panchang', label: 'Panchang', Icon: TabPanchang, size: 26 },
 ];
 
 /** Black bar height above the bottom padding */
