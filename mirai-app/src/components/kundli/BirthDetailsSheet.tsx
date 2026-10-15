@@ -14,6 +14,8 @@ import ClockIcon from '../../assets/images/icon-clock.svg';
 import GenderMale from '../../assets/images/icon-gender-male.svg';
 import GenderFemale from '../../assets/images/icon-gender-female.svg';
 import TargetIcon from '../../assets/images/icon-target.svg';
+import PlaceSuggestions from '../PlaceSuggestions';
+import usePlaceAutocomplete, { type PickedPlace } from '../../hooks/usePlaceAutocomplete';
 import { cardGradients, colors, fonts } from '../../theme';
 
 export type BirthField = 'name' | 'gender' | 'time' | 'place';
@@ -25,6 +27,8 @@ export type BirthDetails = {
   gender?: KundliGender;
   time?: BirthTime;
   place: string;
+  /** Coordinates of a picked place suggestion (typed places are geocoded by the backend) */
+  coords?: { lat: number; lon: number; tzone: number | null };
 };
 
 type Props = {
@@ -67,6 +71,8 @@ export default function BirthDetailsSheet({ mode, selfMissing, dateLabel, onClos
   const [gender, setGender] = useState<KundliGender | undefined>();
   const [time, setTime] = useState<BirthTime | undefined>();
   const [place, setPlace] = useState('');
+  const [picked, setPicked] = useState<PickedPlace | null>(null);
+  const places = usePlaceAutocomplete();
   const [timeSheet, setTimeSheet] = useState(false);
   const [draftTime, setDraftTime] = useState<BirthTime>(DEFAULT_BIRTH_TIME);
   const [busy, setBusy] = useState(false);
@@ -95,7 +101,10 @@ export default function BirthDetailsSheet({ mode, selfMissing, dateLabel, onClos
     setError(null);
     setBusy(true);
     try {
-      await onSubmit({ who, name: name.trim(), gender, time, place: place.trim() });
+      const trimmed = place.trim();
+      const coords =
+        picked && picked.name === trimmed ? { lat: picked.lat, lon: picked.lon, tzone: picked.tzone } : undefined;
+      await onSubmit({ who, name: name.trim(), gender, time, place: trimmed, coords });
     } catch (e) {
       setError(formatError(e));
       setBusy(false);
@@ -211,11 +220,28 @@ export default function BirthDetailsSheet({ mode, selfMissing, dateLabel, onClos
                   value={place}
                   onChangeText={v => {
                     setPlace(v);
+                    setPicked(null);
+                    places.onType(v);
                     clearError();
                   }}
                   placeholder="City of birth"
                   autoCapitalize="words"
                   maxLength={200}
+                />
+              )}
+              {asks('place') && (
+                <PlaceSuggestions
+                  suggestions={places.suggestions}
+                  loading={places.loading}
+                  onPick={async s => {
+                    setPlace(s.description || s.name);
+                    clearError();
+                    const p = await places.pick(s);
+                    if (p) {
+                      setPlace(p.name);
+                      setPicked(p);
+                    }
+                  }}
                 />
               )}
 

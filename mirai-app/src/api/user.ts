@@ -62,6 +62,8 @@ export type UpdateMeInput = Partial<{
   isProfileComplete: boolean;
   lat: number;
   long: number;
+  /** UTC offset in hours of the birth place (IST = 5.5) */
+  tzone: number;
   /** partial merge on the backend */
   notificationPrefs: Partial<NotificationPrefs>;
 }>;

@@ -60,6 +60,12 @@ function profileWhen(p: KundliProfile) {
   return `${date} · ${time} · ${p.birthPlace}`;
 }
 
+/** lat / lon / tzone of a picked place suggestion for POST /kundli/profiles */
+function kundliCoords(d: BirthDetails): Pick<CreateKundliProfileInput, 'lat' | 'lon' | 'tzone'> {
+  if (!d.coords) return {};
+  return { lat: d.coords.lat, lon: d.coords.lon, ...(d.coords.tzone !== null ? { tzone: d.coords.tzone } : {}) };
+}
+
 /** API error + its first field message, e.g. "Validation failed. Invalid place" */
 function formatApiError(e: unknown) {
   const field = e instanceof ApiError ? e.errors[0]?.message : undefined;
@@ -198,6 +204,7 @@ export default function GenerateKundliScreen() {
         dateOfBirth,
         birthTime: birthTimeTo24h(d.time!),
         birthPlace: d.place,
+        ...kundliCoords(d),
         isSelf: false,
       });
       setDetails(null);
@@ -209,7 +216,14 @@ export default function GenerateKundliScreen() {
     if (req.selfMissing.includes('name')) patch.fullName = d.name;
     if (req.selfMissing.includes('gender')) patch.gender = d.gender;
     if (req.selfMissing.includes('time')) patch.birthTime = birthTimeTo24h(d.time!);
-    if (req.selfMissing.includes('place')) patch.birthPlace = d.place;
+    if (req.selfMissing.includes('place')) {
+      patch.birthPlace = d.place;
+      if (d.coords) {
+        patch.lat = d.coords.lat;
+        patch.long = d.coords.lon;
+        if (d.coords.tzone !== null) patch.tzone = d.coords.tzone;
+      }
+    }
     const user = Object.keys(patch).length ? await saveProfile(patch) : null;
 
     await createAndOpen({
@@ -218,6 +232,7 @@ export default function GenerateKundliScreen() {
       dateOfBirth,
       birthTime: patch.birthTime ?? birthTimeTo24h(data.birthTime!),
       birthPlace: patch.birthPlace ?? (data.birthPlace ?? '').trim(),
+      ...(patch.birthPlace ? kundliCoords(d) : {}),
       isSelf: true,
     });
     setDetails(null);

@@ -26,6 +26,7 @@ import faqAdminRoutes from '../modules/faq/faq.admin.routes';
 import mediaRoutes from '../modules/media/media.routes';
 import notificationRoutes from '../modules/notification/notification.routes';
 import notificationAdminRoutes from '../modules/notification/notification.admin.routes';
+import placesRoutes from '../modules/places/places.routes';
 import leadRoutes from '../modules/lead/lead.routes';
 import leadAdminRoutes from '../modules/lead/lead.admin.routes';
 
@@ -67,6 +68,7 @@ const moduleRoutes: Array<{ path: string; router: Router }> = [
   { path: '/media', router: mediaRoutes },
   { path: '/notifications', router: notificationRoutes },
   { path: '/admin/notifications', router: notificationAdminRoutes },
+  { path: '/places', router: placesRoutes },
   { path: '/leads', router: leadRoutes },
   { path: '/admin/leads', router: leadAdminRoutes },
 ];

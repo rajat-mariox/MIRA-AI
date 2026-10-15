@@ -110,6 +110,10 @@ export type CreateKundliProfileInput = {
   dateOfBirth: string;
   birthTime: string;
   birthPlace: string;
+  /** From a picked place suggestion; without them the server geocodes `birthPlace` */
+  lat?: number;
+  lon?: number;
+  tzone?: number;
   isSelf?: boolean;
 };
 

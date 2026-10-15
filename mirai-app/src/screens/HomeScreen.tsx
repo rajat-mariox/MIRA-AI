@@ -39,7 +39,7 @@ import { ApiError } from '../api/client';
 import { formatRange, MUHURAT_INFO } from '../utils/astro';
 import { resolveMediaUrl } from '../utils/media';
 import { colors, DESIGN_STATUS_BAR, fonts } from '../theme';
-import { refreshUnreadCount, useUnreadCount } from '../notifications';
+import { promptNotificationPermission, refreshUnreadCount, useUnreadCount } from '../notifications';
 
 const bannerImage = require('../assets/images/banner-know-your-stars.png');
 
@@ -143,6 +143,14 @@ export default function HomeScreen() {
     if (home.data && userId) saveCachedHome(userId, home.data);
   }, [home.data, userId]);
   const homeData = home.data ?? cachedHome ?? undefined;
+
+  // Ask for the notification permission once the user reaches Home (after the screen has drawn)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      promptNotificationPermission().catch(() => {});
+    }, 800);
+    return () => clearTimeout(t);
+  }, []);
 
   // Banners: last session's list shows at once; GET /banners (small, public) runs on its own
   // so the carousel doesn't wait for the horoscope and panchang in /home

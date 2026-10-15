@@ -2,6 +2,7 @@ export {
   DEFAULT_CHANNEL_ID,
   getFcmTokenQuietly,
   handleNotifeeEvent,
+  promptNotificationPermission,
   registerPushToken,
   startNotifications,
   unregisterPushToken,

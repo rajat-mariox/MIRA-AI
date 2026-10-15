@@ -19,7 +19,9 @@ import ClockIconActive from '../assets/images/panchang-clock-active.svg';
 import MenuBoardIcon from '../assets/images/panchang-menu-board.svg';
 import MenuBoardIconActive from '../assets/images/panchang-menu-board-active.svg';
 import Chevron from '../assets/images/panchang-chevron-24.svg';
-import KeyValueList, { humanize } from '../components/KeyValueList';
+import { humanize } from '../components/KeyValueList';
+import PanchangTable from '../components/panchang/PanchangTable';
+import { sectionRows } from '../components/panchang/panchangRows';
 import { BalamView, PanchakView } from '../components/panchang/ComputedSections';
 import { EmptyText, ErrorCard, LoadingView } from '../components/StateViews';
 import useApi from '../hooks/useApi';
@@ -262,7 +264,7 @@ function DetailSectionRow({
         ) : section === 'panchaka-rahita' ? (
           <PanchakView data={details.data as PanchakaRahita | undefined} />
         ) : (
-          <KeyValueList data={details.data} />
+          <PanchangTable rows={sectionRows(section, details.data, date)} />
         ))}
     </GlassCard>
   );

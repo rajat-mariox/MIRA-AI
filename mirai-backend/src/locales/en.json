@@ -290,5 +290,9 @@
   "lead.updated": "Lead updated successfully.",
   "lead.deleted": "Lead deleted successfully.",
   "lead.notFound": "Lead not found.",
-  "lead.rateLimited": "Too many messages from this network. Please try again in an hour."
+  "lead.rateLimited": "Too many messages from this network. Please try again in an hour.",
+  "places.fetched": "Places fetched successfully.",
+  "places.notConfigured": "Place suggestions are not available right now. Please type your city.",
+  "places.unavailable": "Place suggestions are unavailable right now. Please try again.",
+  "places.failed": "Could not load place suggestions. Please type your city."
 }

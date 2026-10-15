@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Image, StyleSheet, TextInput, useWindowDimensions } from 'react-native';
+import { Image, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import OnboardingLayout from '../components/OnboardingLayout';
 import GlassCard from '../components/GlassCard';
+import PlaceSuggestions from '../components/PlaceSuggestions';
+import usePlaceAutocomplete, { type PickedPlace } from '../hooks/usePlaceAutocomplete';
+import type { PlaceSuggestion } from '../api/places';
 import Button, { ButtonRow } from '../components/Button';
 import { useOnboarding } from '../context/OnboardingContext';
 import useStepSaver from '../hooks/useStepSaver';
@@ -19,15 +22,38 @@ export default function BirthPlaceScreen({ navigation }: Props) {
   const s = width / DESIGN_WIDTH;
   const { data, update } = useOnboarding();
   const [city, setCity] = useState(data.birthPlace ?? '');
+  // Coordinates of the suggestion the user picked (typed-only places are geocoded by the backend)
+  const [picked, setPicked] = useState<PickedPlace | null>(null);
+  const places = usePlaceAutocomplete();
+
+  const onChangeCity = (v: string) => {
+    setCity(v);
+    setPicked(null);
+    places.onType(v);
+  };
+
+  const onPick = async (suggestion: PlaceSuggestion) => {
+    setCity(suggestion.description || suggestion.name);
+    const p = await places.pick(suggestion);
+    if (p) {
+      setCity(p.name);
+      setPicked(p);
+    }
+  };
 
   const { saving, save } = useStepSaver();
 
   const onNext = () => {
     const value = city.trim();
     if (!value) return;
-    // The backend geocodes the place name when an astrology endpoint first needs coordinates
+    // A picked suggestion brings its coordinates; a typed place is geocoded by the backend
+    const coords =
+      picked && picked.name === value
+        ? { lat: picked.lat, long: picked.lon, ...(picked.tzone !== null ? { tzone: picked.tzone } : {}) }
+        : {};
+    places.clear();
     update({ birthPlace: value });
-    save(4, { birthPlace: value }, () => navigation.navigate('Gender'));
+    save(4, { birthPlace: value, ...coords }, () => navigation.navigate('Gender'));
   };
 
   const onUnknown = () => {
@@ -62,7 +88,7 @@ export default function BirthPlaceScreen({ navigation }: Props) {
       <GlassCard angle={115.25} style={styles.field}>
         <TextInput
           value={city}
-          onChangeText={setCity}
+          onChangeText={onChangeCity}
           placeholder="Type in city of birth"
           placeholderTextColor={colors.placeholder}
           selectionColor={colors.primary}
@@ -74,6 +100,9 @@ export default function BirthPlaceScreen({ navigation }: Props) {
           style={styles.input}
         />
       </GlassCard>
+      <View style={styles.suggestions}>
+        <PlaceSuggestions suggestions={places.suggestions} loading={places.loading} onPick={onPick} />
+      </View>
     </OnboardingLayout>
   );
 }
@@ -89,9 +118,13 @@ const styles = StyleSheet.create({
   field: {
     marginTop: 14,
     marginHorizontal: 20,
-    marginBottom: 24,
     // Design padding minus the 1px border
     padding: 15,
+  },
+  suggestions: {
+    marginTop: 8,
+    marginHorizontal: 20,
+    marginBottom: 16,
   },
   input: {
     height: 24,

@@ -14,6 +14,8 @@ export const updateMeSchema = z
     isProfileComplete: z.boolean(),
     lat: z.number().min(-90).max(90),
     long: z.number().min(-180).max(180),
+    /** UTC offset in hours of the birth place (IST = 5.5), from the place suggestion */
+    tzone: z.number().min(-12).max(14),
     /** Partial merge: only the sent keys change */
     notificationPrefs: z
       .object({ daily: z.boolean(), weekly: z.boolean(), festival: z.boolean(), muhurat: z.boolean() })

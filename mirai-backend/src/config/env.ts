@@ -61,6 +61,8 @@ const envSchema = z.object({
   DIVINE_USE_TRANSLATOR: booleanString,
   /** Festivals from Google Calendar's public Indian holidays calendar (used when the key is set) */
   GOOGLE_CALENDAR_API_KEY: optionalString,
+  /** Birth place suggestions (src/lib/places.ts): enable "Places API (New)" on the key */
+  GOOGLE_MAPS_API_KEY: optionalString,
   GOOGLE_HOLIDAY_CALENDAR_ID: z.string().trim().min(1).default('en.indian#holiday@group.v.calendar.google.com'),
   /** true = don't start the scheduled notification jobs (daily/weekly horoscope, festival, muhurat) in this process */
   NOTIFICATION_JOBS_DISABLED: booleanString,

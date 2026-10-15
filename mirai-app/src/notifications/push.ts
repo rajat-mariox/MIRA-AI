@@ -156,13 +156,25 @@ export async function getFcmTokenQuietly(timeoutMs = 4000): Promise<string | nul
   }
 }
 
+let permissionPrompted = false;
+
 /**
- * Signed in (login / session restore): asks for permission, sends the FCM token to the backend
- * (PUT /users/me/fcm-token) and resends it whenever FCM rotates it.
+ * Home screen (first visit per launch): asks for the notification permission there instead of
+ * during login, then registers the token again so pushes start right away once allowed.
+ * Android shows nothing when the permission was already granted (or permanently denied).
+ */
+export async function promptNotificationPermission() {
+  if (permissionPrompted) return;
+  permissionPrompted = true;
+  if (await askPermission()) await registerPushToken();
+}
+
+/**
+ * Signed in (login / session restore): sends the FCM token to the backend (PUT
+ * /users/me/fcm-token) and resends it whenever FCM rotates it. The permission is asked on Home.
  */
 export async function registerPushToken() {
   try {
-    await askPermission();
     const m = messaging();
     const token = await getFcmTokenQuietly(10000);
     if (token) await saveFcmToken(token);
