@@ -35,6 +35,8 @@ export type WalletDashboard = {
   quickRechargeOptions: QuickRechargeOption[];
   paymentMethods: PaymentMethodOption[];
   trustBadges: { id: string; label: string }[];
+  /** 'stripe' = pay with Stripe PaymentSheet; 'simulated' = Stripe not set up on the server (dev) */
+  payments?: { provider: 'stripe' | 'simulated'; enabled: boolean };
 };
 
 export type Transaction = {
@@ -85,13 +87,46 @@ export function getTransactions(type: TransactionFilter, page = 1, limit = 20) {
 }
 
 /**
- * POST /wallet/recharge: the backend simulates a successful payment for now.
- * TODO: real payment gateway (Razorpay / PhonePe): create an order on the backend, run the
- * SDK checkout here, and let the backend verify the payment before crediting the wallet.
+ * POST /wallet/recharge: simulated payment, used only while Stripe isn't configured on the
+ * server (`payments.provider === 'simulated'`, local development). Refused in production.
  */
 export function recharge(amount: number, paymentMethod: PaymentMethodId, cardLast4?: string) {
   return requestWithMessage<{ balance: number; balanceText: string; transaction: Transaction }>(
     '/wallet/recharge',
     { method: 'POST', body: { amount, paymentMethod, ...(cardLast4 ? { cardLast4 } : {}) } },
   );
+}
+
+export type RechargeIntent = {
+  paymentIntentId: string;
+  clientSecret: string;
+  ephemeralKey: string;
+  customerId: string;
+  publishableKey: string;
+  merchantDisplayName: string;
+  merchantCountryCode: string;
+  amount: number;
+  currency: string;
+};
+
+/** POST /wallet/recharge/intent: Stripe PaymentIntent + customer ephemeral key for PaymentSheet */
+export function createRechargeIntent(amount: number) {
+  return request<RechargeIntent>('/wallet/recharge/intent', { method: 'POST', body: { amount } });
+}
+
+export type RechargeConfirmation = {
+  /** Stripe PaymentIntent status: 'succeeded' | 'processing' | 'requires_payment_method' | ... */
+  status: string;
+  credited: boolean;
+  balance: number;
+  balanceText: string;
+  transaction?: Transaction;
+};
+
+/** POST /wallet/recharge/confirm: credits the wallet once the PaymentIntent has succeeded */
+export function confirmRecharge(paymentIntentId: string) {
+  return requestWithMessage<RechargeConfirmation>('/wallet/recharge/confirm', {
+    method: 'POST',
+    body: { paymentIntentId },
+  });
 }

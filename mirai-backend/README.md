@@ -32,6 +32,7 @@ See `.env.example` (every var documented). Validated at boot by `src/config/env.
 | SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
 | 3rd party | `DIVINE_API_KEY`, `DIVINE_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET`, `FIREBASE_SERVICE_ACCOUNT_PATH` |
 | Admin | `ADMIN_SEED_EMAIL`, `ADMIN_SEED_PASSWORD` |
+| Stripe | `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_CURRENCY` (inr), `STRIPE_MERCHANT_NAME` (MIRAI), `STRIPE_MERCHANT_COUNTRY` (IN) |
 
 ## Project structure
 
@@ -187,9 +188,12 @@ Profile: `{ id, _id, name, gender, dateOfBirth, birthTime, birthPlace, lat, lon,
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | GET | `/plans` | user | active plans by `sortOrder` -> `{ plans }` (4 defaults seeded on first request when the collection is empty) |
-| GET | `/wallet` | user | `{ balance, balanceText, currencySymbol, lastRechargeAt, lastRechargeText, quickRechargeOptions[], paymentMethods[], trustBadges[] }` |
+| GET | `/wallet` | user | `{ balance, balanceText, currencySymbol, lastRechargeAt, lastRechargeText, quickRechargeOptions[], paymentMethods[], trustBadges[], payments: { provider: stripe\|simulated, enabled } }` |
 | GET | `/wallet/transactions` | user | `?type=all\|recharge\|usage&page&limit(20)` -> `{ balance, groups: [{ key, label, transactions }], pagination }`; IST day groups ("Today"/"Yesterday"/"12 Mar 2026") |
-| POST | `/wallet/recharge` | user | `{ amount: int 1..100000, paymentMethod: upi\|card\|netbanking, cardLast4? }` (simulated success) -> 201 `{ balance, transaction }` |
+| POST | `/wallet/recharge` | user | `{ amount: int 1..100000, paymentMethod: upi\|card\|netbanking, cardLast4? }` (simulated success, dev) -> 201 `{ balance, transaction }`; 400 `wallet.useStripe` in production once Stripe is configured |
+| POST | `/wallet/recharge/intent` | user | `{ amount: int 1..100000 }` -> 201 `{ paymentIntentId, clientSecret, ephemeralKey, customerId, publishableKey, merchantDisplayName, merchantCountryCode, amount, currency }` for PaymentSheet; 503 `wallet.paymentsNotConfigured`, 502 `wallet.paymentProviderError` |
+| POST | `/wallet/recharge/confirm` | user | `{ paymentIntentId }` -> 200 `{ status, credited, balance, balanceText, transaction? }` (credits once if the PaymentIntent succeeded; own PaymentIntents only, else 404 `wallet.paymentNotFound`) |
+| POST | `/payments/stripe/webhook` | Stripe signature | raw body; `payment_intent.succeeded` credits the wallet (idempotent: one Transaction per PaymentIntent, `gateway: 'stripe'`, `paymentRef = pi.id`), `payment_intent.payment_failed` is logged; 400 bad signature, 503 `STRIPE_WEBHOOK_SECRET` unset |
 | POST | `/wallet/debit` | user | `{ amount, purpose, title, description? }` -> 201 `{ balance, transaction }`; 400 `wallet.insufficientBalance` |
 | POST/GET | `/support`, `/support/:id` | user | create `{ subject, description, category?, priority? }` or app dispute `{ issueType, description }` -> `{ ticket }`; list own `{ tickets, pagination }` |
 | POST | `/feedback` | user | `{ rating 1-5, message? \| thoughts? }` -> 201 `{ feedback, promptStoreReview }` |

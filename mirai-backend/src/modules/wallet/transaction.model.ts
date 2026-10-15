@@ -42,6 +42,8 @@ const transactionSchema = new Schema(
     paymentRef: { type: String, trim: true },
     /** Last 4 digits for card payments ("Card ••4521"). */
     cardLast4: { type: String, trim: true },
+    /** Payment gateway that took the money ('stripe'); unset for simulated / internal entries. */
+    gateway: { type: String, trim: true },
     status: { type: String, enum: TRANSACTION_STATUSES, default: 'success', index: true },
     currency: { type: String, default: 'INR' },
     /** Optional plan bought with this transaction. */
@@ -56,6 +58,11 @@ const transactionSchema = new Schema(
 transactionSchema.index({ userId: 1, createdAt: -1 });
 transactionSchema.index({ createdAt: -1 });
 transactionSchema.index({ type: 1, status: 1, createdAt: -1 });
+// A Stripe PaymentIntent credits the wallet at most once (webhook and /recharge/confirm can race)
+transactionSchema.index(
+  { paymentRef: 1 },
+  { unique: true, name: 'uniq_stripe_paymentRef', partialFilterExpression: { gateway: 'stripe' } },
+);
 withIdJSON(transactionSchema);
 
 export type TransactionAttrs = InferSchemaType<typeof transactionSchema>;

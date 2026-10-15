@@ -11,6 +11,8 @@ import { notFound } from './middleware/notFound';
 import { globalRateLimiter } from './middleware/rateLimit';
 import { requestId } from './middleware/requestId';
 import apiRouter from './routes';
+import { stripeWebhook } from './modules/payment/payment.controller';
+import { asyncHandler } from './utils/asyncHandler';
 import { LOCAL_UPLOAD_DIR, LOCAL_UPLOAD_ROUTE } from './modules/media/media.storage';
 
 export const API_PREFIX = '/api/v1';
@@ -46,6 +48,12 @@ export function createApp(): Express {
     }),
   );
   app.use(compression());
+  // Stripe signs the exact bytes it sends: this route needs the raw body, so it sits before express.json
+  app.post(
+    `${API_PREFIX}/payments/stripe/webhook`,
+    express.raw({ type: 'application/json', limit: '1mb' }),
+    asyncHandler(stripeWebhook),
+  );
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 

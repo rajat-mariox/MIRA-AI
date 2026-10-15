@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { StatusBar, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import GradientBackground from '../components/GradientBackground';
 import CosmicArt from '../components/CosmicArt';
@@ -17,7 +24,20 @@ const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Welcome'>;
 
-export default function WelcomeScreen({ navigation }: Props) {
+export default function WelcomeScreen({ navigation, route }: Props) {
+  // Coming from the splash: the artwork is already in place, so only the text and form fade up
+  const fromSplash = !!route.params?.fromSplash;
+  const reveal = useRef(new Animated.Value(fromSplash ? 0 : 1)).current;
+  useEffect(() => {
+    if (!fromSplash) return;
+    Animated.timing(reveal, {
+      toValue: 1,
+      duration: 380,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [fromSplash, reveal]);
+
   const { data, update } = useOnboarding();
   const layout = useAuthLayout(39);
 
@@ -57,7 +77,20 @@ export default function WelcomeScreen({ navigation }: Props) {
       >
         {/* Inside the scroll content; shrinks while the keyboard is open so nothing is cut off */}
         <CosmicArt scale={layout.artScale} />
-        <View onLayout={layout.onFormLayout}>
+        <Animated.View
+          onLayout={layout.onFormLayout}
+          style={{
+            opacity: reveal,
+            transform: [
+              {
+                translateY: reveal.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [16, 0],
+                }),
+              },
+            ],
+          }}
+        >
           <View style={styles.intro}>
             <Text style={styles.title}>Welcome</Text>
             <Text style={styles.subtitle}>
@@ -92,7 +125,7 @@ export default function WelcomeScreen({ navigation }: Props) {
               disabled={sending}
             />
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAwareScroll>
     </View>
   );

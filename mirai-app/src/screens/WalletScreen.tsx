@@ -30,7 +30,8 @@ import ChevronRight from '../assets/images/wallet-chevron-right.svg';
 import { ErrorCard } from '../components/StateViews';
 import useApi from '../hooks/useApi';
 import { getWallet, recharge, type PaymentMethodId } from '../api/wallet';
-import { errorMessage } from '../api/client';
+import { ApiError, errorMessage } from '../api/client';
+import { rechargeWithStripe } from '../utils/stripePayment';
 import { useSession } from '../context/OnboardingContext';
 import { cardGradients, colors, fonts } from '../theme';
 
@@ -45,6 +46,11 @@ const METHOD_ICONS: Record<PaymentMethodId, React.FC<SvgProps>> = {
   card: CardsIcon,
   netbanking: CardIcon,
 };
+function paymentErrorMessage(e: unknown): string {
+  if (!(e instanceof ApiError) && e instanceof Error && e.message) return e.message;
+  return errorMessage(e);
+}
+
 const DESIGN_METHODS: { id: PaymentMethodId; title: string; subtitle: string }[] = [
   { id: 'upi', title: 'UPI Payment', subtitle: 'Google Pay, PhonePe, Paytm' },
   { id: 'card', title: 'Credit / Debit Card', subtitle: 'Visa, Mastercard, RuPay' },
@@ -56,7 +62,7 @@ export default function WalletScreen() {
   const { scrolled, onScroll } = useScrolledFromTop();
   const insets = useSafeAreaInsets();
 
-  const { refreshUser } = useSession();
+  const { refreshUser, user } = useSession();
   const [quickAmount, setQuickAmount] = useState<number | null>(DEFAULT_QUICK_AMOUNT);
   const [customAmount, setCustomAmount] = useState('');
   const [method, setMethod] = useState<PaymentMethodId | null>(null);
@@ -125,24 +131,41 @@ export default function WalletScreen() {
       );
       return;
     }
+    setPaying(true);
+    try {
+      // Stripe PaymentSheet shows the methods the Stripe account enables (card, UPI, ...).
+      // 'simulated' = Stripe isn't configured on the server (local development).
+      if (w?.payments?.provider === 'simulated') {
+        await simulatedRecharge();
+        return;
+      }
+      const result = await rechargeWithStripe(amount, { email: user?.email, name: user?.fullName });
+      if (result.outcome === 'canceled') return;
+      const { status } = result.confirmation;
+      setCustomAmount('');
+      reload();
+      refreshUser();
+      if (status === 'succeeded') Alert.alert('Recharge successful', result.message);
+      else if (status === 'processing') Alert.alert('Payment processing', result.message);
+      else Alert.alert('Payment not completed', result.message);
+    } catch (e) {
+      Alert.alert('Recharge failed', paymentErrorMessage(e));
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  // Development fallback: the backend credits the wallet without a real payment
+  const simulatedRecharge = async () => {
     if (!method) {
       Alert.alert('Choose a payment method', 'Please select UPI, card or net banking below.');
       return;
     }
-    // TODO: payment gateway: open the checkout for `amount` with `method` and only then credit
-    // the wallet. The backend currently simulates a successful payment.
-    setPaying(true);
-    try {
-      const { message } = await recharge(amount, method);
-      setCustomAmount('');
-      reload();
-      refreshUser();
-      Alert.alert('Recharge successful', message);
-    } catch (e) {
-      Alert.alert('Recharge failed', errorMessage(e));
-    } finally {
-      setPaying(false);
-    }
+    const { message } = await recharge(amount, method);
+    setCustomAmount('');
+    reload();
+    refreshUser();
+    Alert.alert('Recharge successful', message);
   };
 
   return (

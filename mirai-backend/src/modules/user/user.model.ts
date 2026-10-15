@@ -26,6 +26,8 @@ const userSchema = new Schema(
     tzone: { type: Number, default: 5.5 },
     avatarUrl: { type: String },
     walletBalance: { type: Number, default: 0, min: 0 },
+    /** Stripe Customer (cus_...) created on the first card / UPI wallet recharge. Never sent to the app. */
+    stripeCustomerId: { type: String, trim: true },
     /** Free AI chat questions already used (limit: env CHAT_FREE_QUESTIONS). */
     chatFreeUsed: { type: Number, default: 0, min: 0 },
     isActive: { type: Boolean, default: true, index: true },

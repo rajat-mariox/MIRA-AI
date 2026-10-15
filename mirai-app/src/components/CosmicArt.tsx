@@ -3,7 +3,7 @@ import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Rings from '../assets/images/rings.svg';
 import { DESIGN_WIDTH } from '../theme';
 
-const glow = require('../assets/images/glow-bg.png');
+const glow = require('../assets/images/glow-bg-alpha.png');
 const noise = require('../assets/images/noise-texture.png');
 const emblem = require('../assets/images/mirai-emblem.png');
 
@@ -16,18 +16,32 @@ const ART = {
   emblem: { left: 112.02, top: 114.19, size: 150 },
 };
 
+/** Where the emblem sits on the login screens (design px; multiply by width / DESIGN_WIDTH) */
+export const COSMIC_EMBLEM = ART.emblem;
+
 // Content below the artwork should not start above this line (design px, scaled)
 export const COSMIC_ART_RESERVED_HEIGHT = 330;
 
 // Glow, concentric rings, noise texture and the MIRAI emblem, scaled with the screen width.
 // `scale` shrinks it from the top centre (login screens shrink it while the keyboard is open).
-export default function CosmicArt({ scale = 1 }: { scale?: number }) {
+// `showEmblem={false}` draws only the backdrop (the splash animates its own emblem into place).
+export default function CosmicArt({
+  scale = 1,
+  showEmblem = true,
+}: {
+  scale?: number;
+  showEmblem?: boolean;
+}) {
   const { width } = useWindowDimensions();
   const s = width / DESIGN_WIDTH;
 
   return (
     <View
-      style={[StyleSheet.absoluteFill, styles.origin, { transform: [{ scale }] }]}
+      style={[
+        StyleSheet.absoluteFill,
+        styles.origin,
+        { transform: [{ scale }] },
+      ]}
       pointerEvents="none"
     >
       <Image
@@ -35,7 +49,6 @@ export default function CosmicArt({ scale = 1 }: { scale?: number }) {
         resizeMode="cover"
         style={[
           styles.abs,
-          styles.glow,
           {
             left: ART.glow.left * s,
             top: ART.glow.top * s,
@@ -47,7 +60,10 @@ export default function CosmicArt({ scale = 1 }: { scale?: number }) {
       <Rings
         width={ART.rings.size * s}
         height={ART.rings.size * s}
-        style={[styles.abs, { left: ART.rings.left * s, top: ART.rings.top * s }]}
+        style={[
+          styles.abs,
+          { left: ART.rings.left * s, top: ART.rings.top * s },
+        ]}
       />
       <View
         style={[
@@ -74,19 +90,21 @@ export default function CosmicArt({ scale = 1 }: { scale?: number }) {
           ]}
         />
       </View>
-      <Image
-        source={emblem}
-        accessibilityLabel="MIRAI"
-        style={[
-          styles.abs,
-          {
-            left: ART.emblem.left * s,
-            top: ART.emblem.top * s,
-            width: ART.emblem.size * s,
-            height: ART.emblem.size * s,
-          },
-        ]}
-      />
+      {showEmblem && (
+        <Image
+          source={emblem}
+          accessibilityLabel="MIRAI"
+          style={[
+            styles.abs,
+            {
+              left: ART.emblem.left * s,
+              top: ART.emblem.top * s,
+              width: ART.emblem.size * s,
+              height: ART.emblem.size * s,
+            },
+          ]}
+        />
+      )}
     </View>
   );
 }
@@ -97,9 +115,6 @@ const styles = StyleSheet.create({
   },
   abs: {
     position: 'absolute',
-  },
-  glow: {
-    mixBlendMode: 'plus-lighter',
   },
   noiseFrame: {
     overflow: 'hidden',

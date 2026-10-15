@@ -35,11 +35,24 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator
       initialRouteName="Splash"
-      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' } }}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#000' },
+      }}
     >
       {/* Transparent so the native launch background (same nebula) shows until the splash image draws */}
-      <Stack.Screen name="Splash" component={SplashScreen} options={{ contentStyle: styles.transparent }} />
-      <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: 'fade' }} />
+      <Stack.Screen
+        name="Splash"
+        component={SplashScreen}
+        options={{ contentStyle: styles.transparent }}
+      />
+      <Stack.Screen
+        name="Welcome"
+        component={WelcomeScreen}
+        options={({ route }) => ({
+          animation: route.params?.fromSplash ? 'none' : 'fade',
+        })}
+      />
       <Stack.Screen name="Otp" component={OtpScreen} />
       <Stack.Screen name="Name" component={NameScreen} />
       <Stack.Screen name="BirthDate" component={BirthDateScreen} />
@@ -47,7 +60,11 @@ export default function RootNavigator() {
       <Stack.Screen name="BirthPlace" component={BirthPlaceScreen} />
       <Stack.Screen name="Gender" component={GenderScreen} />
       <Stack.Screen name="Relationship" component={RelationshipScreen} />
-      <Stack.Screen name="Main" component={MainTabs} options={{ animation: 'fade' }} />
+      <Stack.Screen
+        name="Main"
+        component={MainTabs}
+        options={{ animation: 'fade' }}
+      />
       <Stack.Screen name="HoroscopeDetail" component={HoroscopeDetailScreen} />
       <Stack.Screen name="CareerInsights" component={CareerInsightsScreen} />
       <Stack.Screen name="AstroGuide" component={AstroGuideScreen} />

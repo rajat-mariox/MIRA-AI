@@ -13,13 +13,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Rings from '../assets/images/splash-rings.svg';
 import type { RootStackParamList } from '../navigation/types';
 import { routesForUser } from '../navigation/navigationRef';
+import GradientBackground from '../components/GradientBackground';
+import CosmicArt, { COSMIC_EMBLEM } from '../components/CosmicArt';
 import { useSession } from '../context/OnboardingContext';
 import { DESIGN_WIDTH } from '../theme';
 
 // Nebula video frame with the design's hard-light blue→pink gradient baked in
 // (Android does not render Figma's hard-light blend the same way)
 const background = require('../assets/images/splash-background.png');
-const glow = require('../assets/images/glow-bg.png');
+const glow = require('../assets/images/glow-bg-alpha.png');
 const emblem = require('../assets/images/mirai-emblem.png');
 
 // Sizes from the 375×812 Figma frame. Everything is centred 2px above the screen centre.
@@ -39,6 +41,10 @@ const DRIFT_MS = 8000;
 const DRIFT_SCALE = 1 + 0.0127 * (DRIFT_MS / 1000);
 const DRIFT_DEG = 0.59 * (DRIFT_MS / 1000);
 
+// Hand-over to Welcome (like the prototype's smart animate): the emblem glides up into its
+// Welcome spot while the Welcome backdrop fades in; Welcome then opens with no transition.
+const OUTRO_MS = 650;
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export default function SplashScreen({ navigation }: Props) {
@@ -47,6 +53,7 @@ export default function SplashScreen({ navigation }: Props) {
   const s = width / DESIGN_WIDTH;
   const opacity = useRef(new Animated.Value(0)).current;
   const drift = useRef(new Animated.Value(0)).current;
+  const outro = useRef(new Animated.Value(0)).current;
   const { restoreSession } = useSession();
 
   const cx = width / 2;
@@ -57,6 +64,13 @@ export default function SplashScreen({ navigation }: Props) {
     width: w * s,
     height: h * s,
   });
+
+  // Centre and size of the emblem on the Welcome screen (CosmicArt), relative to the splash one
+  const emblemTarget = {
+    dx: (COSMIC_EMBLEM.left + COSMIC_EMBLEM.size / 2) * s - cx,
+    dy: (COSMIC_EMBLEM.top + COSMIC_EMBLEM.size / 2) * s - cy,
+    scale: COSMIC_EMBLEM.size / ART.emblem,
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -82,14 +96,21 @@ export default function SplashScreen({ navigation }: Props) {
           const routes = routesForUser(user);
           navigation.reset({ index: routes.length - 1, routes });
         } else {
-          navigation.replace('Welcome');
+          Animated.timing(outro, {
+            toValue: 1,
+            duration: OUTRO_MS,
+            easing: Easing.inOut(Easing.cubic),
+            useNativeDriver: true,
+          }).start(() => {
+            if (!cancelled) navigation.replace('Welcome', { fromSplash: true });
+          });
         }
       },
     );
     return () => {
       cancelled = true;
     };
-  }, [navigation, opacity, drift, restoreSession]);
+  }, [navigation, opacity, drift, outro, restoreSession]);
 
   return (
     <View style={styles.root}>
@@ -126,17 +147,51 @@ export default function SplashScreen({ navigation }: Props) {
         source={glow}
         resizeMode="cover"
         fadeDuration={0}
-        style={[styles.abs, styles.plusLighter, centred(ART.glow)]}
+        style={[styles.abs, centred(ART.glow)]}
       />
       <Rings
         width={ART.rings * s}
         height={ART.rings * s}
         style={[styles.abs, centred(ART.rings)]}
       />
+      {/* Welcome's backdrop, faded in during the hand-over */}
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { opacity: outro }]}
+        pointerEvents="none"
+      >
+        <GradientBackground />
+        <CosmicArt showEmblem={false} />
+      </Animated.View>
       <Animated.Image
         source={emblem}
         accessibilityLabel="MIRAI"
-        style={[styles.abs, centred(ART.emblem), { opacity }]}
+        style={[
+          styles.abs,
+          centred(ART.emblem),
+          {
+            opacity,
+            transform: [
+              {
+                translateX: outro.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, emblemTarget.dx],
+                }),
+              },
+              {
+                translateY: outro.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, emblemTarget.dy],
+                }),
+              },
+              {
+                scale: outro.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, emblemTarget.scale],
+                }),
+              },
+            ],
+          },
+        ]}
       />
     </View>
   );
@@ -157,8 +212,5 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: 0,
-  },
-  plusLighter: {
-    mixBlendMode: 'plus-lighter',
   },
 });

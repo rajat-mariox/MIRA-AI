@@ -1,7 +1,9 @@
 import { Types } from 'mongoose';
 import { randomBytes } from 'node:crypto';
+import { env } from '../../config/env';
 import { translate, type Lang } from '../../lib/i18n';
 import { logger } from '../../lib/logger';
+import { isStripeConfigured } from '../../lib/stripe';
 import { ApiError } from '../../utils/ApiError';
 import { escapeRegex } from '../../utils/idTransform';
 import { parsePagination } from '../../utils/pagination';
@@ -18,6 +20,8 @@ import {
   CURRENCY,
   CURRENCY_SYMBOL,
   formatMoney,
+  MAX_RECHARGE,
+  MIN_RECHARGE,
   paymentMethodLabel,
   paymentMethodOptions,
   quickRechargeOptions,
@@ -43,6 +47,8 @@ export interface CreditWalletInput extends DebitWalletInput {
   paymentMethod?: PaymentMethod;
   paymentRef?: string;
   cardLast4?: string;
+  /** 'stripe' for gateway payments (paymentRef is then unique: one credit per PaymentIntent). */
+  gateway?: string;
 }
 
 export interface WalletOpResult {
@@ -132,6 +138,7 @@ export async function creditWallet(userId: string | Types.ObjectId, input: Credi
       paymentMethod: input.paymentMethod ?? 'Wallet',
       paymentRef: input.paymentRef,
       cardLast4: input.cardLast4,
+      gateway: input.gateway,
       status: 'success',
       currency: CURRENCY,
       referenceId: input.referenceId,
@@ -232,11 +239,13 @@ export async function getDashboard(userId: string, lang: Lang) {
     lastRechargeText: lastRechargeRelative
       ? translate(lang, 'wallet.lastRecharged', { time: lastRechargeRelative })
       : translate(lang, 'wallet.neverRecharged'),
-    minRechargeAmount: 1,
-    maxRechargeAmount: 100_000,
+    minRechargeAmount: MIN_RECHARGE,
+    maxRechargeAmount: MAX_RECHARGE,
     quickRechargeOptions: quickRechargeOptions(lang),
     paymentMethods: paymentMethodOptions(lang),
     trustBadges: trustBadges(lang),
+    /** 'stripe' = recharge with PaymentSheet (POST /wallet/recharge/intent); 'simulated' = POST /wallet/recharge */
+    payments: { provider: isStripeConfigured() ? ('stripe' as const) : ('simulated' as const), enabled: isStripeConfigured() },
   };
 }
 
@@ -280,8 +289,12 @@ function simulatedPaymentRef(method: PaymentMethod): string {
   return `SIM-${prefix}-${Date.now().toString(36).toUpperCase()}${randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-/** Simulated recharge (no gateway yet): always succeeds. */
+/**
+ * Simulated recharge (development / before Stripe is set up): always succeeds.
+ * Refused in production once Stripe is configured, so nobody can add free money.
+ */
 export async function recharge(userId: string, lang: Lang, input: RechargeInput) {
+  if (env.isProd && isStripeConfigured()) throw ApiError.badRequest('wallet.useStripe');
   let planId: string | undefined;
   if (input.planId) planId = String((await getActivePlanById(input.planId))._id);
   const method = input.paymentMethod as PaymentMethod;

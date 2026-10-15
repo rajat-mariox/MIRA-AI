@@ -26,6 +26,14 @@ export const rechargeSchema = z.object({
   planId: z.string().trim().regex(/^[a-f\d]{24}$/i, 'Invalid id').optional(),
 });
 
+export const rechargeIntentSchema = z.object({
+  amount: z.coerce.number().int('Amount must be a whole number').min(MIN_RECHARGE).max(MAX_RECHARGE),
+});
+
+export const rechargeConfirmSchema = z.object({
+  paymentIntentId: z.string().trim().regex(/^pi_[A-Za-z0-9]{8,}$/, 'Invalid paymentIntentId'),
+});
+
 export const debitSchema = z.object({
   amount: z.coerce.number().positive().max(MAX_RECHARGE),
   purpose: z.preprocess(lower, z.enum(TRANSACTION_PURPOSES).exclude(['recharge', 'refund', 'bonus'])),
@@ -47,5 +55,7 @@ export const transactionIdParam = idParam();
 
 export type ListTransactionsQuery = z.infer<typeof listTransactionsQuery>;
 export type RechargeInput = z.infer<typeof rechargeSchema>;
+export type RechargeIntentInput = z.infer<typeof rechargeIntentSchema>;
+export type RechargeConfirmInput = z.infer<typeof rechargeConfirmSchema>;
 export type DebitInput = z.infer<typeof debitSchema>;
 export type AdminListTransactionsQuery = z.infer<typeof adminListTransactionsQuery>;

@@ -19,7 +19,8 @@ export type MainTabParamList = {
 
 export type RootStackParamList = {
   Splash: undefined;
-  Welcome: undefined;
+  /** fromSplash: the splash already animated into Welcome, so open it without a transition */
+  Welcome: { fromSplash?: boolean } | undefined;
   Otp: undefined;
   Name: undefined;
   BirthDate: undefined;

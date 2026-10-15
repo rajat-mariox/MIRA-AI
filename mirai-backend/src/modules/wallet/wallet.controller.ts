@@ -1,7 +1,15 @@
 import type { Request, Response } from 'express';
 import { sendSuccess } from '../../utils/response';
+import * as stripeService from '../payment/stripe.service';
 import * as walletService from './wallet.service';
-import type { AdminListTransactionsQuery, DebitInput, ListTransactionsQuery, RechargeInput } from './wallet.validation';
+import type {
+  AdminListTransactionsQuery,
+  DebitInput,
+  ListTransactionsQuery,
+  RechargeConfirmInput,
+  RechargeInput,
+  RechargeIntentInput,
+} from './wallet.validation';
 
 // User handlers run behind requireAuth, so req.user is always set.
 
@@ -22,6 +30,22 @@ export async function listTransactions(req: Request, res: Response) {
 export async function recharge(req: Request, res: Response) {
   const data = await walletService.recharge(String(req.user!._id), req.lang, req.body as RechargeInput);
   return sendSuccess(res, 201, 'wallet.recharged', data, { amount: data.transaction.amountText.replace(/^\+/, '') });
+}
+
+export async function rechargeIntent(req: Request, res: Response) {
+  const { amount } = req.body as RechargeIntentInput;
+  const data = await stripeService.createRechargeIntent(String(req.user!._id), amount);
+  return sendSuccess(res, 201, 'wallet.paymentIntentCreated', data);
+}
+
+export async function rechargeConfirm(req: Request, res: Response) {
+  const { paymentIntentId } = req.body as RechargeConfirmInput;
+  const data = await stripeService.confirmRecharge(String(req.user!._id), req.lang, paymentIntentId);
+  if (data.status === 'succeeded' && data.transaction) {
+    return sendSuccess(res, 200, 'wallet.recharged', data, { amount: data.transaction.amountText.replace(/^\+/, '') });
+  }
+  const key = data.status === 'processing' ? 'wallet.paymentPending' : 'wallet.paymentNotCompleted';
+  return sendSuccess(res, 200, key, data);
 }
 
 export async function debit(req: Request, res: Response) {

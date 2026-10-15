@@ -87,6 +87,14 @@ const envSchema = z.object({
   LEADS_RATE_LIMIT_PER_HOUR: z.coerce.number().int().min(1).default(5),
   /** Who gets the "new lead" e-mail (only sent when SMTP_HOST is set); falls back to ADMIN_SEED_EMAIL. */
   LEADS_NOTIFY_EMAIL: optionalString,
+  /** Stripe (wallet recharges). All three keys empty = payments not configured (simulated recharge in dev). */
+  STRIPE_SECRET_KEY: optionalString,
+  STRIPE_PUBLISHABLE_KEY: optionalString,
+  /** Signing secret of the webhook endpoint (whsec_...) for POST /api/v1/payments/stripe/webhook */
+  STRIPE_WEBHOOK_SECRET: optionalString,
+  STRIPE_CURRENCY: z.string().trim().toLowerCase().length(3).default('inr'),
+  STRIPE_MERCHANT_NAME: z.string().trim().min(1).default('MIRAI'),
+  STRIPE_MERCHANT_COUNTRY: z.string().trim().toUpperCase().length(2).default('IN'),
 });
 
 const parsed = envSchema.safeParse(process.env);
