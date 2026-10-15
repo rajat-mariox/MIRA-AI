@@ -6,7 +6,6 @@ import CosmicArt from '../components/CosmicArt';
 import useAuthLayout from '../hooks/useAuthLayout';
 import KeyboardAwareScroll from '../components/KeyboardAwareScroll';
 import TextField from '../components/TextField';
-import AgreementCheckbox from '../components/AgreementCheckbox';
 import Button from '../components/Button';
 import { useOnboarding } from '../context/OnboardingContext';
 import { sendOtp } from '../api/auth';
@@ -23,7 +22,6 @@ export default function WelcomeScreen({ navigation }: Props) {
   const layout = useAuthLayout(39);
 
   const [email, setEmail] = useState(data.email);
-  const [agreed, setAgreed] = useState(true);
   const [error, setError] = useState<string>();
   const [sending, setSending] = useState(false);
 
@@ -32,10 +30,6 @@ export default function WelcomeScreen({ navigation }: Props) {
     const value = email.trim();
     if (!EMAIL_PATTERN.test(value)) {
       setError('Please enter a valid email id');
-      return;
-    }
-    if (!agreed) {
-      setError('Please accept the Terms & Conditions');
       return;
     }
     setError(undefined);
@@ -73,30 +67,24 @@ export default function WelcomeScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.form}>
-            <View style={styles.fields}>
-              <TextField
-                label="Enter Your Email id"
-                placeholder="abhi@gmail.com"
-                value={email}
-                onChangeText={text => {
-                  setEmail(text);
-                  if (error) setError(undefined);
-                }}
-                error={error}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                textContentType="emailAddress"
-                returnKeyType="done"
-                onSubmitEditing={onGetOtp}
-              />
-              <AgreementCheckbox
-                checked={agreed}
-                onToggle={() => setAgreed(v => !v)}
-                onPressTerms={() => navigation.navigate('Legal', { type: 'terms' })}
-              />
-            </View>
+            <TextField
+              label="Enter Your Email id"
+              boxStyle={styles.emailBox}
+              placeholder="abhi@gmail.com"
+              value={email}
+              onChangeText={text => {
+                setEmail(text);
+                if (error) setError(undefined);
+              }}
+              error={error}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="done"
+              onSubmitEditing={onGetOtp}
+            />
             <Button
               title="Get OTP"
               onPress={onGetOtp}
@@ -111,6 +99,10 @@ export default function WelcomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // Figma 7763:45657: the email field is pill-shaped (radius 58)
+  emailBox: {
+    borderRadius: 58,
+  },
   root: {
     flex: 1,
     backgroundColor: colors.black,
@@ -123,7 +115,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 24,
-    marginBottom: 47,
+    marginBottom: 37,
   },
   title: {
     fontFamily: fonts.regular,
@@ -150,8 +142,5 @@ const styles = StyleSheet.create({
   form: {
     gap: 30,
     paddingHorizontal: 20,
-  },
-  fields: {
-    gap: 20,
   },
 });

@@ -1,17 +1,33 @@
 import React from 'react';
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { colors, fonts } from '../theme';
 
 type Props = TextInputProps & {
   label: string;
   error?: string;
+  /** extra style for the input box (e.g. the Welcome screen's pill-shaped field) */
+  boxStyle?: StyleProp<ViewStyle>;
 };
 
-export default function TextField({ label, error, style, ...inputProps }: Props) {
+export default function TextField({
+  label,
+  error,
+  style,
+  boxStyle,
+  ...inputProps
+}: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <View style={[styles.box, !!error && styles.boxError]}>
+      <View style={[styles.box, boxStyle, !!error && styles.boxError]}>
         <TextInput
           placeholderTextColor={colors.placeholder}
           selectionColor={colors.primary}

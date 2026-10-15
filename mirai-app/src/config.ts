@@ -12,7 +12,7 @@ import { NativeModules } from 'react-native';
  *   block cleartext HTTP).
  */
 const PROD_API_BASE_URL = 'https://api.miraiastro.com/api/v1';
-const FALLBACK_DEV_HOST = '192.168.29.200';
+const FALLBACK_DEV_HOST = '192.168.1.40';
 
 function devServerHost(): string {
   const source = NativeModules.SourceCode as
