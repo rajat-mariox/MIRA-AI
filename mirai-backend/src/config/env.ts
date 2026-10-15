@@ -45,6 +45,13 @@ const envSchema = z.object({
   SMTP_USER: optionalString,
   SMTP_PASS: optionalString,
   SMTP_FROM: z.string().default('MIRAI <no-reply@miraiastro.com>'),
+  /** MSG91 Email: when MSG91_AUTH_KEY is set, OTP emails go through the MSG91 template */
+  MSG91_AUTH_KEY: optionalString,
+  MSG91_EMAIL_DOMAIN: z.string().trim().default('mail.miraiastro.com'),
+  MSG91_FROM_EMAIL: z.string().trim().default('no-reply@mail.miraiastro.com'),
+  MSG91_FROM_NAME: z.string().trim().default('MIRAI'),
+  MSG91_OTP_TEMPLATE_ID: z.string().trim().default('global_otp'),
+  MSG91_COMPANY_NAME: z.string().trim().default('MIRAI'),
 
   DIVINE_API_KEY: optionalString,
   DIVINE_AUTH_TOKEN: optionalString,

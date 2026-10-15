@@ -70,7 +70,7 @@ export default function WelcomeScreen({ navigation }: Props) {
             <TextField
               label="Enter Your Email id"
               boxStyle={styles.emailBox}
-              placeholder="abhi@gmail.com"
+              placeholder="Enter your email address"
               value={email}
               onChangeText={text => {
                 setEmail(text);

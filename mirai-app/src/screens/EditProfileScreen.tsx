@@ -32,8 +32,8 @@ import { resolveMediaUrl } from '../utils/media';
 
 const PLACEHOLDERS = {
   name: 'Your name',
-  email: 'abhi@gmail.com',
-  phone: '7878798866',
+  email: 'Enter your email address',
+  phone: 'Enter your phone number',
   birthDate: 'DD : MM : YYYY',
 };
 const COUNTRY_CODES = [

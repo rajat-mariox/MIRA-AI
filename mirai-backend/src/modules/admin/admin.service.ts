@@ -5,7 +5,7 @@ import { env } from '../../config/env';
 import { translate, type Lang } from '../../lib/i18n';
 import { signAdminToken } from '../../lib/jwt';
 import { logger } from '../../lib/logger';
-import { isMailerConfigured, sendMail } from '../../lib/mailer';
+import { sendOtpEmail } from '../../lib/otpMail';
 import { setAdminLoader } from '../../middleware/admin';
 import { ApiError } from '../../utils/ApiError';
 import { Admin, toPublicAdmin, type AdminDocument, type PublicAdmin } from './admin.model';
@@ -112,11 +112,8 @@ export async function forgotPassword(email: string, lang: Lang): Promise<void> {
   <p style="color:#888;font-size:12px">${translate(lang, 'email.adminReset.ignore')}</p>
 </div>`;
 
-  if (!isMailerConfigured()) {
-    logger.info(`[admin] Password reset OTP for ${email}: ${otp} (expires in ${env.OTP_EXPIRY_MINUTES} min)`);
-  }
   try {
-    await sendMail({ to: email, subject, text, html });
+    await sendOtpEmail({ to: email, otp, subject, text, html, context: 'admin' });
   } catch (err) {
     logger.error({ err, email }, 'Failed to send admin reset OTP email');
     if (env.isProd) throw ApiError.internal('admin.otpSendFailed');

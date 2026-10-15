@@ -4,7 +4,7 @@ import { env } from '../../config/env';
 import { translate, type Lang } from '../../lib/i18n';
 import { getTokenExpiry, signAccessToken, signRefreshToken, verifyRefreshToken } from '../../lib/jwt';
 import { logger } from '../../lib/logger';
-import { isMailerConfigured, sendMail } from '../../lib/mailer';
+import { sendOtpEmail } from '../../lib/otpMail';
 import { ApiError } from '../../utils/ApiError';
 import { toPublicUser, User, type PublicUser, type UserDocument } from '../user/user.model';
 import { Otp, Session } from './auth.model';
@@ -62,14 +62,13 @@ export async function sendOtp(email: string, meta: ClientMeta): Promise<{ isNewU
   <p style="color:#888;font-size:12px">${translate(meta.lang, 'email.otp.ignore')}</p>
 </div>`;
 
-  if (!isMailerConfigured()) {
-    logger.info(`[auth] OTP for ${email}: ${otp} (expires in ${env.OTP_EXPIRY_MINUTES} min)`);
-  }
   try {
-    await sendMail({ to: email, subject, text, html });
+    await sendOtpEmail({ to: email, otp, subject, text, html, context: 'auth' });
   } catch (err) {
     logger.error({ err, email }, 'Failed to send OTP email');
-    throw ApiError.internal('auth.otpSendFailed');
+    if (env.isProd) throw ApiError.internal('auth.otpSendFailed');
+    // Dev: don't block login on a broken email setup; the OTP goes to the log instead
+    logger.warn(`[auth] OTP for ${email}: ${otp} (email failed; dev fallback)`);
   }
 
   return { isNewUser: !existing };

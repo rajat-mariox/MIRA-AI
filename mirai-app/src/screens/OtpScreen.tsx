@@ -4,7 +4,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,6 +12,7 @@ import CosmicArt from '../components/CosmicArt';
 import useAuthLayout from '../hooks/useAuthLayout';
 import KeyboardAwareScroll from '../components/KeyboardAwareScroll';
 import Button from '../components/Button';
+import OtpBoxes from '../components/OtpBoxes';
 import SmsIcon from '../assets/images/icon-sms.svg';
 import type { RootStackParamList } from '../navigation/types';
 import { routesForUser } from '../navigation/navigationRef';
@@ -104,29 +104,16 @@ export default function OtpScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.otpBlock}>
-            <View style={styles.boxes}>
-              {Array.from({ length: OTP_LENGTH }, (_, i) => (
-                <View key={i} style={styles.box}>
-                  <Text style={styles.digit}>{code[i] ?? ''}</Text>
-                </View>
-              ))}
-              {/* Invisible input over the boxes: handles typing, paste and SMS autofill */}
-              <TextInput
-                value={code}
-                onChangeText={t => {
-                  setCode(t.replace(/\D/g, '').slice(0, OTP_LENGTH));
-                  if (error) setError(undefined);
-                }}
-                keyboardType="number-pad"
-                textContentType="oneTimeCode"
-                autoComplete="sms-otp"
-                maxLength={OTP_LENGTH}
-                autoFocus
-                caretHidden
-                style={styles.hiddenInput}
-                accessibilityLabel="One time password"
-              />
-            </View>
+            <OtpBoxes
+              value={code}
+              onChange={next => {
+                setCode(next);
+                if (error) setError(undefined);
+              }}
+              length={OTP_LENGTH}
+              error={!!error}
+              autoFocus
+            />
             {!!error && <Text style={styles.error}>{error}</Text>}
             <Text style={styles.timer}>{formatSeconds(secondsLeft)}</Text>
             <View style={styles.resendRow}>
@@ -196,33 +183,6 @@ const styles = StyleSheet.create({
   otpBlock: {
     gap: 16,
     alignItems: 'center',
-  },
-  boxes: {
-    flexDirection: 'row',
-    gap: 16,
-    width: '100%',
-  },
-  box: {
-    flex: 1,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    borderWidth: 0.636,
-    borderColor: colors.inputBorder,
-    backgroundColor: colors.inputBackground,
-  },
-  digit: {
-    fontFamily: fonts.medium,
-    fontSize: 20,
-    lineHeight: 30,
-    color: colors.white,
-    includeFontPadding: false,
-  },
-  hiddenInput: {
-    ...StyleSheet.absoluteFill,
-    color: 'transparent',
-    opacity: 0.01,
   },
   error: {
     fontFamily: fonts.regular,
