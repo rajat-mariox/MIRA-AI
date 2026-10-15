@@ -40,8 +40,10 @@ const LINE = 19;
 
 type Props = {
   horoscope: HoroscopeData;
-  /** Tapping a card runs this (e.g. Home opens the Horoscope tab); without it the card unfolds in place */
+  /** Tapping a card runs this; without it the card unfolds in place */
   onPressCard?: () => void;
+  /** Home: cards start with three lines of text and the chevron hides / shows the text */
+  collapsible?: boolean;
 };
 
 /**
@@ -49,7 +51,7 @@ type Props = {
  * title + chevron, three lines of the prediction and the category's score bar.
  * Bleeds to the screen edges; place it inside the page's 20dp horizontal padding.
  */
-export default function ForecastCarousel({ horoscope, onPressCard }: Props) {
+export default function ForecastCarousel({ horoscope, onPressCard, collapsible }: Props) {
   const { width } = useWindowDimensions();
   const cardWidth = Math.round(width * 0.85);
   const forecasts = buildForecasts(horoscope);
@@ -65,7 +67,7 @@ export default function ForecastCarousel({ horoscope, onPressCard }: Props) {
       contentContainerStyle={styles.row}
     >
       {forecasts.map(f => (
-        <ForecastCard key={f.id} {...f} width={cardWidth} onPress={onPressCard} />
+        <ForecastCard key={f.id} {...f} width={cardWidth} onPress={onPressCard} collapsible={collapsible} />
       ))}
     </ScrollView>
   );
@@ -76,8 +78,17 @@ export function hasForecasts(h: HoroscopeData | undefined): h is HoroscopeData {
   return !!h && buildForecasts(h).length > 0;
 }
 
-function ForecastCard({ title, text, percent, width, onPress }: Forecast & { width: number; onPress?: () => void }) {
+function ForecastCard({
+  title,
+  text,
+  percent,
+  width,
+  onPress,
+  collapsible,
+}: Forecast & { width: number; onPress?: () => void; collapsible?: boolean }) {
   const [open, setOpen] = useState(false);
+  // collapsible: the text shows until the chevron hides it
+  const [hidden, setHidden] = useState(false);
 
   const handlePress = () => {
     if (onPress) {
@@ -85,15 +96,18 @@ function ForecastCard({ title, text, percent, width, onPress }: Forecast & { wid
       return;
     }
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setOpen(v => !v);
+    if (collapsible) setHidden(v => !v);
+    else setOpen(v => !v);
   };
+  // Chevron points up while the text can be folded away
+  const chevronUp = collapsible ? !hidden : open;
 
   return (
     <Pressable
       onPress={handlePress}
       style={({ pressed }) => [{ width }, pressed && styles.pressed]}
       accessibilityRole="button"
-      accessibilityState={onPress ? undefined : { expanded: open }}
+      accessibilityState={onPress ? undefined : { expanded: collapsible ? !hidden : open }}
       accessibilityLabel={`${title}. ${text}`}
     >
       <GlassCard angle={98.28} style={styles.card}>
@@ -101,9 +115,9 @@ function ForecastCard({ title, text, percent, width, onPress }: Forecast & { wid
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
-          <ChevronDown width={20} height={20} style={[styles.chevron, open && styles.chevronOpen]} />
+          <ChevronDown width={20} height={20} style={[styles.chevron, chevronUp && styles.chevronOpen]} />
         </View>
-        {open ? (
+        {collapsible && hidden ? null : open ? (
           <ExpandableText style={styles.textOpen} lines={8}>
             {text}
           </ExpandableText>

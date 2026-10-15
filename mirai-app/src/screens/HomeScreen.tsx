@@ -31,7 +31,8 @@ import ForecastCarousel, { hasForecasts } from '../components/horoscope/Forecast
 import UserAvatar from '../components/UserAvatar';
 import { ErrorCard, InfoCard, LoadingView } from '../components/StateViews';
 import useApi from '../hooks/useApi';
-import { getHome } from '../api/home';
+import { getHome, loadCachedHome, saveCachedHome, type HomeData } from '../api/home';
+import { getBanners, getCachedBanners, loadCachedBanners, saveCachedBanners, type Banner } from '../api/banners';
 import { isSetupRequired } from '../api/horoscope';
 import type { MuhuratSummary } from '../api/panchang';
 import { ApiError } from '../api/client';
@@ -125,9 +126,57 @@ export default function HomeScreen() {
     setUser(res.user);
     return res;
   }, []);
-  const homeData = home.data;
+  // Today's Home from the last launch shows at once; the fresh response replaces it
+  const [cachedHome, setCachedHome] = useState<HomeData | null>(null);
+  const userId = user?._id;
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    loadCachedHome(userId).then(c => {
+      if (alive && c) setCachedHome(c);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+  useEffect(() => {
+    if (home.data && userId) saveCachedHome(userId, home.data);
+  }, [home.data, userId]);
+  const homeData = home.data ?? cachedHome ?? undefined;
 
-  const apiBanners: BannerItem[] = (homeData?.banners ?? []).map(b => ({
+  // Banners: last session's list shows at once; GET /banners (small, public) runs on its own
+  // so the carousel doesn't wait for the horoscope and panchang in /home
+  const [bannerList, setBannerList] = useState<Banner[] | null>(getCachedBanners);
+  useEffect(() => {
+    let alive = true;
+    const apply = (list: Banner[] | null | undefined) => {
+      if (!alive || !list) return;
+      list.forEach(b => {
+        const uri = resolveMediaUrl(b.imageUrl);
+        if (uri) Image.prefetch(uri).catch(() => {});
+      });
+      setBannerList(prev => (JSON.stringify(prev) === JSON.stringify(list) ? prev : list));
+    };
+    loadCachedBanners().then(cached => {
+      if (alive) setBannerList(prev => prev ?? cached);
+    });
+    getBanners()
+      .then(list => {
+        apply(list);
+        saveCachedBanners(list);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (homeData?.banners) {
+      setBannerList(prev => prev ?? homeData.banners);
+    }
+  }, [homeData?.banners]);
+
+  const apiBanners: BannerItem[] = (bannerList ?? []).map(b => ({
     id: b.id ?? b._id,
     title: b.title,
     subtitle: b.subtitle,
@@ -155,7 +204,6 @@ export default function HomeScreen() {
   };
   const goTab = (tab: 'Horoscope' | 'Panchang') => navigation.navigate('Main', { screen: tab });
   const userSign = homeData?.user.zodiacSign ?? user?.zodiacSign ?? undefined;
-  const openHoroscope = () => navigation.navigate('Main', { screen: 'Horoscope', params: { sign: userSign } });
   // "View Today": today's horoscope page for the user's own rashi
   const openToday = () => navigation.navigate('HoroscopeDetail', { sign: userSign });
 
@@ -295,13 +343,13 @@ export default function HomeScreen() {
         </View>
 
         {/* Today's horoscope */}
-        <SectionHeader title="Your Today Horoscope" onPress={openHoroscope} />
+        <SectionHeader title="Your Today Horoscope" onPress={openToday} />
         {home.loading && !homeData ? (
           <LoadingView />
-        ) : home.error ? (
+        ) : home.error && !homeData ? (
           <ErrorCard error={home.error} onRetry={home.reload} />
         ) : forecastData ? (
-          <ForecastCarousel horoscope={forecastData} onPressCard={openHoroscope} />
+          <ForecastCarousel horoscope={forecastData} collapsible />
         ) : isSetupRequired(horoscope) ? (
           <InfoCard
             title="Add your date of birth"
@@ -316,7 +364,7 @@ export default function HomeScreen() {
         <SectionHeader title="Panchang of the Day" onPress={() => goTab('Panchang')} />
         {home.loading && !homeData ? (
           <LoadingView />
-        ) : home.error ? null : muhurat ? (
+        ) : home.error && !homeData ? null : muhurat ? (
           <GlassCard angle={100.39} style={styles.panchang}>
             <View style={styles.panchangTop}>
               <View style={styles.muhurat}>

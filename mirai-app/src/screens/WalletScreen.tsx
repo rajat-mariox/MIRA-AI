@@ -63,8 +63,8 @@ export default function WalletScreen() {
   const insets = useSafeAreaInsets();
 
   const { refreshUser, user } = useSession();
-  const [quickAmount, setQuickAmount] = useState<number | null>(DEFAULT_QUICK_AMOUNT);
-  const [customAmount, setCustomAmount] = useState('');
+  // The amount field is the single source of truth; a quick pill just fills it in
+  const [customAmount, setCustomAmount] = useState(String(DEFAULT_QUICK_AMOUNT));
   const [method, setMethod] = useState<PaymentMethodId | null>(null);
   const [paying, setPaying] = useState(false);
 
@@ -105,17 +105,15 @@ export default function WalletScreen() {
   }, []);
   const keyboardHeight = useKeyboardHeight(scrollToInput);
 
-  const amount = quickAmount ?? Number(customAmount || 0);
-  const hasCustomAmount = Number(customAmount || 0) > 0;
+  const amount = Number(customAmount || 0);
+  const hasCustomAmount = amount > 0;
 
   const onChangeAmount = (text: string) => {
     setCustomAmount(text.replace(/[^0-9]/g, '').replace(/^0+/, ''));
-    setQuickAmount(null);
   };
 
   const onSelectQuickAmount = (value: number) => {
-    setQuickAmount(value);
-    setCustomAmount('');
+    setCustomAmount(String(value));
   };
 
   const onRecharge = async () => {
@@ -229,7 +227,7 @@ export default function WalletScreen() {
                 contentContainerStyle={styles.pills}
               >
                 {quickAmounts.map(q => {
-                  const selected = quickAmount === q.value;
+                  const selected = amount === q.value;
                   const label = (
                     <Text
                       style={[

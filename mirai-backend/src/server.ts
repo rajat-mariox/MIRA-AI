@@ -5,6 +5,7 @@ import { cache } from './lib/cache';
 import { connectDB, disconnectDB } from './lib/db';
 import { logger } from './lib/logger';
 import { bootstrapAdmin } from './modules/admin/admin.bootstrap';
+import { startCacheWarmJob, stopCacheWarmJob } from './jobs/cacheWarmJob';
 import { startNotificationJobs, stopNotificationJobs } from './jobs/notificationJobs';
 
 let server: Server | undefined;
@@ -21,6 +22,7 @@ async function start(): Promise<void> {
     logger.info(`Cache: ${cache.status() === 'disabled' ? 'in-memory (REDIS_URL not set)' : 'redis'}`);
   });
   startNotificationJobs();
+  startCacheWarmJob();
 }
 
 async function shutdown(signal: string, exitCode = 0): Promise<void> {
@@ -36,6 +38,7 @@ async function shutdown(signal: string, exitCode = 0): Promise<void> {
 
   try {
     stopNotificationJobs();
+    stopCacheWarmJob();
     if (server) await new Promise<void>((resolve) => server!.close(() => resolve()));
     await cache.close();
     await disconnectDB();

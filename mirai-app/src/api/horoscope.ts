@@ -20,6 +20,8 @@ export type HoroscopeData = {
   period: string;
   cached: boolean;
   prediction: HoroscopePrediction;
+  /** Lucky day ("Friday") and time ("9:14 AM - 10:12 AM", null near the poles) from the sign's ruling planet */
+  lucky?: { day: string; time: string | null };
   special?: {
     lucky_color_codes: string[];
     /** personal, health, profession, emotions, travel, luck -> 0..100 */

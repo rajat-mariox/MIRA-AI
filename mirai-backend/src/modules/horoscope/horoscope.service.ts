@@ -2,6 +2,7 @@ import { cache } from '../../lib/cache';
 import { divineLan, divineRequest, type DivineEndpointName, type DivineFields } from '../../lib/divine';
 import type { Lang } from '../../lib/i18n';
 import { localDateParts, pad2, secondsUntilLocal } from '../../utils/astroTime';
+import { luckyTiming, type LuckyTiming } from '../../utils/luckyTiming';
 import { getUserRashi, type ZodiacSign } from '../../utils/zodiac';
 import type { UserDocument } from '../user/user.model';
 import { normalizeHoroscope, type NormalizedHoroscope } from './horoscope.normalize';
@@ -12,7 +13,13 @@ export interface HoroscopeData extends NormalizedHoroscope {
   /** 'daily-today' | 'daily-tomorrow' | 'daily-yesterday' | 'weekly' | 'monthly' | 'yearly' */
   period: string;
   cached: boolean;
+  /** Lucky day + time for this sign at the user's place (getHoroscope only; not from Divine) */
+  lucky?: LuckyTiming;
 }
+
+/** Used for the lucky time when the user has no saved location (New Delhi) */
+const DEFAULT_PLACE = { lat: 28.6139, lon: 77.209 };
+const DAY_OFFSET: Record<HoroscopeDay, number> = { yesterday: -1, today: 0, tomorrow: 1 };
 
 export interface HoroscopeSetupRequired {
   requiresProfileSetup: true;
@@ -111,6 +118,13 @@ export async function getHoroscope(user: UserDocument, query: HoroscopeQuery, la
       },
     };
   }
-  const data = await fetchHoroscope(sign, query.period, query.day, user.tzone ?? 5.5, lang);
-  return { ok: true, data };
+  const tzone = user.tzone ?? 5.5;
+  const data = await fetchHoroscope(sign, query.period, query.day, tzone, lang);
+  // Daily: the day it is for; longer periods: today
+  const offset = query.period === 'daily' ? DAY_OFFSET[query.day] : 0;
+  const date = localDateParts(tzone, new Date(Date.now() + offset * 86_400_000));
+  const place =
+    typeof user.lat === 'number' && typeof user.long === 'number' ? { lat: user.lat, lon: user.long } : DEFAULT_PLACE;
+  const lucky = luckyTiming(sign, date, { ...place, tzone }, lang === 'hi' ? 'hi' : 'en');
+  return { ok: true, data: { ...data, lucky } };
 }

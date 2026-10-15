@@ -66,7 +66,11 @@ export async function resolveContext(user: UserDocument | undefined, q: Panchang
   return { ...loc, day: q.day ?? today.day, month: q.month ?? today.month, year: q.year ?? today.year };
 }
 
-const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
+/**
+ * Locations are rounded to 2 decimals (~1 km) for Divine and the cache key: panchang timings
+ * differ by well under a second over that distance, and everyone in a town shares one cache entry.
+ */
+const roundLoc = (n: number) => Math.round(n * 100) / 100;
 
 function ctxFields(c: PanchangContext): DivineFields {
   return {
@@ -74,8 +78,8 @@ function ctxFields(c: PanchangContext): DivineFields {
     month: pad2(c.month),
     year: String(c.year),
     place: c.place,
-    lat: String(round4(c.lat)),
-    lon: String(round4(c.lon)),
+    lat: String(roundLoc(c.lat)),
+    lon: String(roundLoc(c.lon)),
     tzone: String(c.tzone),
   };
 }
@@ -83,7 +87,7 @@ function ctxFields(c: PanchangContext): DivineFields {
 /** Cache key: panchang:<thing>:<YYYY-MM-DD>:<lat>:<lon>:<tzone>:<lan>[:extra] */
 function keyFor(thing: string, c: { year: number; month: number; day?: number; lat: number; lon: number; tzone: number }, lang: Lang, extra?: string) {
   const date = c.day !== undefined ? `${c.year}-${pad2(c.month)}-${pad2(c.day)}` : `${c.year}-${pad2(c.month)}`;
-  return ['panchang', thing, date, round4(c.lat), round4(c.lon), c.tzone, divineLan(lang), extra].filter((x) => x !== undefined).join(':');
+  return ['panchang', thing, date, roundLoc(c.lat), roundLoc(c.lon), c.tzone, divineLan(lang), extra].filter((x) => x !== undefined).join(':');
 }
 
 async function dayCall<T = Record<string, unknown>>(
@@ -143,8 +147,8 @@ export async function festivals(u: U, q: FestivalsQuery, lang: Lang) {
         year: String(year),
         month: pad2(month),
         place: loc.place,
-        lat: String(round4(loc.lat)),
-        lon: String(round4(loc.lon)),
+        lat: String(roundLoc(loc.lat)),
+        lon: String(roundLoc(loc.lon)),
         tzone: String(loc.tzone),
       },
       lang,

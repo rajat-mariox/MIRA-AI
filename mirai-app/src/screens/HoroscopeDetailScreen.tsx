@@ -57,8 +57,8 @@ export default function HoroscopeDetailScreen() {
     number: luckValue(luck, /number/i) ?? '--',
     colorName: luckValue(luck, /colou?r/i) ?? '--',
     colorCode: h?.special?.lucky_color_codes?.[0],
-    time: luckValue(luck, /time|hour/i) ?? '--',
-    day: luckValue(luck, /lucky day|weekday|day of the week/i) ?? '--',
+    time: h?.lucky?.time ?? luckValue(luck, /time|hour/i) ?? '--',
+    day: h?.lucky?.day ?? luckValue(luck, /lucky day|weekday|day of the week/i) ?? '--',
   };
   const description = h ? h.prediction.personal || h.prediction.emotions : '';
 
